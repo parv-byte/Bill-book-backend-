@@ -106,15 +106,19 @@ router.get('/stats/summary', async (req, res) => {
 router.get('/export/csv', async (req, res) => {
   try {
     const invoices = await Invoice.find().sort({ srNo: 1 });
-    let csv = 'Sr No,Date,Company Name,GSTIN,Description,Total Amount,Other Charges,Grand Total,Status\n';
+    // UTF-8 BOM for Microsoft Excel compatibility
+    let csv = '\ufeffSr No,Date,Company Name,GSTIN,Description,Total Amount,Other Charges,Grand Total,Status\n';
     
     invoices.forEach(inv => {
-      const desc = inv.items.map(i => i.description).join('; ').replace(/"/g, '""');
-      const comp = inv.companyName.replace(/"/g, '""');
-      csv += `${inv.srNo},"${inv.date}","${comp}","${inv.partyGstin || ''}","${desc}",${inv.totalAmount},${inv.otherCharges},${inv.grandTotal},${inv.status}\n`;
+      const desc = (inv.items || []).map(i => i.description).join('; ').replace(/"/g, '""');
+      const comp = (inv.companyName || '').replace(/"/g, '""');
+      const gstin = (inv.partyGstin || '').replace(/"/g, '""');
+      // Padded srNo
+      const sr = String(inv.srNo).padStart(3, '0');
+      csv += `${sr},"${inv.date}","${comp}","${gstin}","${desc}",${Number(inv.totalAmount || 0).toFixed(2)},${Number(inv.otherCharges || 0).toFixed(2)},${Number(inv.grandTotal || 0).toFixed(2)},"${inv.status || 'Pending'}"\n`;
     });
 
-    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=bpc_billbook_records_${Date.now()}.csv`);
     res.send(csv);
   } catch (error) {
