@@ -1,6 +1,7 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const { numberToWords } = require('./numberToWords');
 
 const storageDir = path.join(__dirname, '..', 'storage', 'pdfs');
 if (!fs.existsSync(storageDir)) {
@@ -243,10 +244,14 @@ function generateInvoicePdf(invoice, streamOrPath) {
     const wordsTop = totalsTop + totalsHeight;
     const wordsHeight = 24;
     doc.rect(left, wordsTop, width, wordsHeight).strokeColor(BLACK).stroke();
+    const words = (invoice.amountInWords && !/\d/.test(invoice.amountInWords))
+      ? invoice.amountInWords
+      : numberToWords(invoice.grandTotal || 0);
+
     doc.font('Helvetica-Bold').fontSize(8.5).fillColor(BLACK)
        .text('Amount in Words : ', left + 10, wordsTop + 7, { continued: true })
        .font('Helvetica-Bold').fillColor(BLACK)
-       .text(invoice.amountInWords || 'Rupees Only');
+       .text(words);
 
     // 6. Declarations (Bottom Left) and Signature (Bottom Right)
     const footerTop = wordsTop + wordsHeight;

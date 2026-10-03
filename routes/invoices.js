@@ -195,7 +195,9 @@ router.post('/', async (req, res) => {
     const totalAmount = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     const otherCharges = Number(data.otherCharges || 0);
     const grandTotal = totalAmount + otherCharges;
-    const amountInWords = data.amountInWords || numberToWords(grandTotal);
+    const amountInWords = (data.amountInWords && !/\d/.test(data.amountInWords))
+      ? data.amountInWords
+      : numberToWords(grandTotal);
 
     // Date handling
     const dateStr = data.date || new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
